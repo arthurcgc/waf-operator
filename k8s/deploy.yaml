@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waf-api
+spec:
+  selector:
+    matchLabels:
+      app: waf-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: waf-api
+    spec:
+      containers:
+      - name: waf-api
+        image: in-cluster
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
