@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian
-COPY ./api /api
-ENTRYPOINT /api
+# Start from the latest golang base image
+FROM golang:latest
+
+RUN mkdir /api
+
+ADD . /api
+
+WORKDIR /api
+
+# Build the Go app
+RUN GOOS=linux go build -o bin/api cmd/main.go
+
+# Expose port 8080 to the outside world
+EXPOSE 8080
+
+# Command to run the executable
+CMD ["/api/bin/api"]
