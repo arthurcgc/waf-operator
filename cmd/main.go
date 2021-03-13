@@ -52,10 +52,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	}
-	mgr, err = internal.NewInCluster()
-	if err != nil {
-		panic(err)
+	} else {
+		mgr, err = internal.NewInCluster()
+		if err != nil {
+			panic(err)
+		}
 	}
 	mgr.Start()
 }
