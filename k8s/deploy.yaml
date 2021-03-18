@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: nginx-operator-system
   name: waf-api
 spec:
   selector:
@@ -12,9 +13,10 @@ spec:
       labels:
         app: waf-api
     spec:
+      serviceAccountName: waf-service-account
       containers:
       - name: waf-api
-        image: waf-api:v1.0
+        image: arthurcgc/waf:v1
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -26,6 +28,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: nginx-operator-system
   name: waf-api
 spec:
   type: NodePort
