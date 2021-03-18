@@ -18,45 +18,25 @@ limitations under the License.
 package main
 
 import (
-	"os"
-	"strconv"
-
-	"github.com/arthurcgc/tcc/internal"
-	//
-	// Uncomment to load all auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth"
-	//
-	// Or uncomment to load specific auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/azure"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/openstack"
+	"github.com/arthurcgc/tcc/api"
+	_ "github.com/arthurcgc/tcc/configs"
 )
 
-const envRunOutsideCluster = "WAF_OUTSIDE_CLUSTER"
+//
+// Uncomment to load all auth plugins
+// _ "k8s.io/client-go/plugin/pkg/client/auth"
+//
+// Or uncomment to load specific auth plugins
+// _ "k8s.io/client-go/plugin/pkg/client/auth/azure"
+// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+// _ "k8s.io/client-go/plugin/pkg/client/auth/openstack"
 
-func isOutsideCluster() bool {
-	outside, err := strconv.ParseBool(os.Getenv(envRunOutsideCluster))
+func main() {
+	api, err := api.New()
 	if err != nil {
 		panic(err)
 	}
 
-	return outside
-}
-
-func main() {
-	var mgr internal.WafManager
-	var err error
-	if isOutsideCluster() {
-		mgr, err = internal.NewOutsideCluster()
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		mgr, err = internal.NewInCluster()
-		if err != nil {
-			panic(err)
-		}
-	}
-	mgr.Start()
+	api.Start()
 }

@@ -16,6 +16,10 @@ spec:
       - name: waf-api
         image: waf-api:v1.0
         imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
         ports:
         - containerPort: 8080
 ---

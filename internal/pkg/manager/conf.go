@@ -1,10 +1,14 @@
+package manager
+
+// var wafImage = "owasp/modsecurity:nginx"
+var recommendedConf = `
 # -- Rule engine initialization ----------------------------------------------
 
 # Enable ModSecurity, attaching it to every transaction. Use detection
 # only to start with, because that minimises the chances of post-installation
 # disruption.
 #
-SecRuleEngine DetectionOnly
+SecRuleEngine On
 
 
 # -- Request body handling ---------------------------------------------------
@@ -252,7 +256,7 @@ SecCookieFormat 0
 # to properly map encoded data to your language. Properly setting
 # these directives helps to reduce false positives and negatives.
 #
-SecUnicodeMapFile unicode.mapping 20127
+SecUnicodeMapFile /etc/modsecurity.d/unicode.mapping 20127
 
 # Improve the quality of ModSecurity by sharing information about your
 # current ModSecurity version and dependencies versions.
@@ -260,4 +264,4 @@ SecUnicodeMapFile unicode.mapping 20127
 # Web Server version, APR version, PCRE version, Lua version, Libxml2
 # version, Anonymous unique id for host.
 SecStatusEngine On
-
+`
