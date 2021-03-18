@@ -31,18 +31,15 @@ func NewInCluster() (Manager, error) {
 		return mgr, err
 	}
 
-	// creates the clientset
-	dynamicClient, err := dynamic.NewForConfig(config)
+	mgr.dynamicClient, err = dynamic.NewForConfig(config)
 	if err != nil {
 		return mgr, err
 	}
-	defaultClient, err := kubernetes.NewForConfig(config)
+	mgr.defaultClient, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return mgr, err
 	}
 
-	mgr.defaultClient = defaultClient
-	mgr.dynamicClient = dynamicClient
 	return mgr, nil
 }
 
@@ -56,24 +53,20 @@ func NewOutsideCluster() (Manager, error) {
 	}
 	flag.Parse()
 
-	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		return mgr, err
 	}
 
-	// creates the clientset
-	dynamicClient, err := dynamic.NewForConfig(config)
+	mgr.dynamicClient, err = dynamic.NewForConfig(config)
 	if err != nil {
 		return mgr, err
 	}
-	defaultClient, err := kubernetes.NewForConfig(config)
+	mgr.defaultClient, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return mgr, err
 	}
 
-	mgr.defaultClient = defaultClient
-	mgr.dynamicClient = dynamicClient
 	return mgr, nil
 }
 

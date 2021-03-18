@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 
-	"github.com/arthurcgc/tcc/internal/pkg/manager"
+	"github.com/arthurcgc/waf/internal/pkg/manager"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"

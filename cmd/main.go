@@ -18,8 +18,8 @@ limitations under the License.
 package main
 
 import (
-	"github.com/arthurcgc/tcc/api"
-	_ "github.com/arthurcgc/tcc/configs"
+	"github.com/arthurcgc/waf/api"
+	_ "github.com/arthurcgc/waf/configs"
 )
 
 //

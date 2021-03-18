@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/arthurcgc/tcc/internal/pkg/manager"
+	"github.com/arthurcgc/waf/internal/pkg/manager"
 	echo "github.com/labstack/echo/v4"
 )
 
