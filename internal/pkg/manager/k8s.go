@@ -105,8 +105,7 @@ func (k *k8s) deployNginx(ctx context.Context, args DeployArgs) error {
 				"extraFiles": &v1alpha1.FilesRef{
 					Name: args.WAFConfName,
 					Files: map[string]string{
-						"rules.conf":       "rules.conf",
-						"modsecurity.conf": "modsecurity.conf",
+						"modsec-includes.conf": "modsec-includes.conf",
 					},
 				},
 			},
@@ -135,13 +134,11 @@ func (k *k8s) deployConf(ctx context.Context, args DeployArgs) error {
 
 		Immutable: immutable,
 		Data: map[string]string{
-			"modsecurity.conf": recommendedConf,
-			"rules.conf": `
-# Include the recommended configuration
-Include /etc/nginx/extra_files/modsecurity.conf
-# A test rule
-SecRule ARGS:testparam "@contains test" "id:1234,deny,log,status:403"
-`,
+			"modsec-includes.conf": `
+Include /usr/local/waf-conf/modsecurity-recommended.conf
+Include /usr/local/waf-conf/crs-setup.conf
+Include /usr/local/waf-conf/rules/*.conf
+			`,
 		},
 	}
 	_, err := k.defaultClient.CoreV1().ConfigMaps(args.Namespace).Create(ctx, wafConf, metav1.CreateOptions{})
@@ -163,14 +160,15 @@ SecRule ARGS:testparam "@contains test" "id:1234,deny,log,status:403"
 		Immutable: immutable,
 		Data: map[string]string{
 			"nginx.conf": fmt.Sprintf(`
-	load_module modules/ngx_http_modsecurity_module.so;
+			load_module modules/ngx_http_modsecurity_module.so;
 	events {}
 
 	http {
 		server {
 		listen 8080;
+
 		modsecurity on;
-		modsecurity_rules_file /etc/nginx/extra_files/rules.conf;
+		modsecurity_rules_file /etc/nginx/extra_files/modsec-includes.conf;
 
 		location / {
 			proxy_pass %s;
