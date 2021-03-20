@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: backend
   name: dvwa
 spec:
   selector:
@@ -24,6 +25,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: backend
   name: dvwa-service
 spec:
   selector:

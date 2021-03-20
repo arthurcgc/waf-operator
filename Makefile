@@ -1,4 +1,4 @@
-VERSION="1.0"
+VERSION=${WAF_VERSION}
 
 .PHONY: build
 build:
@@ -10,4 +10,21 @@ run: build
 
 .PHONY: image
 image:
-	docker build . -t waf-api:$(VERSION)
+	docker build . -t arthurcgc/waf:$(VERSION)
+	docker push arthurcgc/waf:$(VERSION)
+
+.PHONY: rbac
+rbac:
+	kubectl apply -f k8s/rbac/
+
+.PHONY: deploy
+deploy:
+	kubectl apply -f k8s/deploy.yaml
+
+.PHONY: deploy-vulnerable
+deploy-vulnerable:
+	kubectl apply -f k8s/vulnerable-web-app/dvwa.yaml
+
+.PHONY: all
+all: build image rbac
+	kubectl apply -f k8s/deploy.yaml

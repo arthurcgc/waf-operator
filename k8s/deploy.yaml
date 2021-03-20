@@ -16,7 +16,7 @@ spec:
       serviceAccountName: waf-service-account
       containers:
       - name: waf-api
-        image: arthurcgc/waf:v1
+        image: arthurcgc/waf
         imagePullPolicy: IfNotPresent
         resources:
           limits:
