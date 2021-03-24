@@ -16,8 +16,7 @@ spec:
       serviceAccountName: waf-service-account
       containers:
       - name: waf-api
-        image: arthurcgc/waf
-        imagePullPolicy: IfNotPresent
+        image: arthurcgc/waf:latest
         resources:
           limits:
             memory: "128Mi"

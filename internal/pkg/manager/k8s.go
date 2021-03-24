@@ -71,31 +71,48 @@ func NewOutsideCluster() (Manager, error) {
 }
 
 func (k *k8s) Deploy(ctx context.Context, args DeployArgs) error {
-	if err := k.deployConf(ctx, args); err != nil {
+	nginxCM := fmt.Sprintf("%s-conf", args.Name)
+	wafCM := fmt.Sprintf("%s-conf-extra", args.Name)
+
+	if err := k.deployConf(ctx, args, nginxCM, wafCM); err != nil {
 		return err
 	}
-	if err := k.deployNginx(ctx, args); err != nil {
+	if err := k.deployNginx(ctx, args, nginxCM, wafCM); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (k *k8s) deployNginx(ctx context.Context, args DeployArgs) error {
-	nginxGVR := schema.GroupVersionResource{Group: "nginx.tsuru.io", Version: "v1alpha1", Resource: "nginxes"}
+func (k *k8s) Delete(ctx context.Context, args DeleteArgs) error {
+	nginxCM := fmt.Sprintf("%s-conf", args.Name)
+	wafCM := fmt.Sprintf("%s-conf-extra", args.Name)
 
+	if err := k.deleteConf(ctx, args, nginxCM, wafCM); err != nil {
+		return err
+	}
+	if err := k.deleteNginx(ctx, args, nginxCM, wafCM); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *k8s) deployNginx(ctx context.Context, args DeployArgs, nginxCM, wafCM string) error {
+	nginxGVR := schema.GroupVersionResource{Group: "nginx.tsuru.io", Version: "v1alpha1", Resource: "nginxes"}
 	nginx := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "nginx.tsuru.io/v1alpha1",
 			"kind":       "Nginx",
 			"metadata": map[string]interface{}{
-				"name": args.WAFName,
+				"name": args.Name,
 			},
 			"spec": map[string]interface{}{
 				"replicas": args.Replicas,
 				"image":    viper.GetString("image"),
 				"config": map[string]interface{}{
 					"kind": "ConfigMap",
-					"name": args.MainConfName,
+					"name": nginxCM,
 				},
 				"service": map[string]interface{}{
 					"type": "NodePort",
@@ -103,7 +120,7 @@ func (k *k8s) deployNginx(ctx context.Context, args DeployArgs) error {
 				// ExtraFiles references to additional files into a object in the cluster.
 				// These additional files will be mounted on `/etc/nginx/extra_files`.
 				"extraFiles": &v1alpha1.FilesRef{
-					Name: args.WAFConfName,
+					Name: wafCM,
 					Files: map[string]string{
 						"modsec-includes.conf": "modsec-includes.conf",
 					},
@@ -120,7 +137,7 @@ func (k *k8s) deployNginx(ctx context.Context, args DeployArgs) error {
 	return nil
 }
 
-func (k *k8s) deployConf(ctx context.Context, args DeployArgs) error {
+func (k *k8s) deployConf(ctx context.Context, args DeployArgs, nginxCM, wafCM string) error {
 	immutable := new(bool)
 	wafConf := &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -128,7 +145,7 @@ func (k *k8s) deployConf(ctx context.Context, args DeployArgs) error {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      args.WAFConfName,
+			Name:      wafCM,
 			Namespace: args.Namespace,
 		},
 
@@ -153,14 +170,14 @@ Include /usr/local/waf-conf/rules/*.conf
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      args.MainConfName,
+			Name:      nginxCM,
 			Namespace: args.Namespace,
 		},
 
 		Immutable: immutable,
 		Data: map[string]string{
 			"nginx.conf": fmt.Sprintf(`
-			load_module modules/ngx_http_modsecurity_module.so;
+	load_module modules/ngx_http_modsecurity_module.so;
 	events {}
 
 	http {
@@ -173,12 +190,37 @@ Include /usr/local/waf-conf/rules/*.conf
 		location / {
 			proxy_pass %s;
 		}
+
+		location /nginx-health {
+			access_log off;
+			return 200 "healthy\n";
+		}
 	}
 	}`, args.ProxyPass),
 		},
 	}
 	_, err = k.defaultClient.CoreV1().ConfigMaps(args.Namespace).Create(ctx, mainConf, metav1.CreateOptions{})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *k8s) deleteConf(ctx context.Context, args DeleteArgs, nginxCM, wafCM string) error {
+	if err := k.defaultClient.CoreV1().ConfigMaps(args.Namespace).Delete(ctx, wafCM, metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+	if err := k.defaultClient.CoreV1().ConfigMaps(args.Namespace).Delete(ctx, nginxCM, metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *k8s) deleteNginx(ctx context.Context, args DeleteArgs, nginxCM, wafCM string) error {
+	nginxGVR := schema.GroupVersionResource{Group: "nginx.tsuru.io", Version: "v1alpha1", Resource: "nginxes"}
+	if err := k.dynamicClient.Resource(nginxGVR).Namespace(args.Namespace).Delete(ctx, args.Name, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 

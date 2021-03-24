@@ -9,30 +9,26 @@ import (
 	echo "github.com/labstack/echo/v4"
 )
 
-type DeployOpts struct {
+type DeleteOpts struct {
 	Name      string
-	Replicas  int
 	Namespace string
-	ProxyPass string `json:"proxy,omitempty"`
 }
 
-func (a *Api) deploy(c echo.Context) error {
-	var opts DeployOpts
+func (a *Api) delete(c echo.Context) error {
+	var opts DeleteOpts
 	err := json.NewDecoder(c.Request().Body).Decode(&opts)
 	if err != nil {
 		return err
 	}
 
-	args := manager.DeployArgs{
+	args := manager.DeleteArgs{
 		Name:      opts.Name,
 		Namespace: opts.Namespace,
-		Replicas:  opts.Replicas,
-		ProxyPass: opts.ProxyPass,
 	}
 
-	if err := a.manager.Deploy(c.Request().Context(), args); err != nil {
+	if err := a.manager.Delete(c.Request().Context(), args); err != nil {
 		return fmt.Errorf("error during deploy: %s", err.Error())
 	}
 
-	return c.String(http.StatusCreated, "Created nginx resource!\n")
+	return c.String(http.StatusOK, "Successfully deleted nginx resource!\n")
 }

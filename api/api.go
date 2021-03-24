@@ -42,8 +42,9 @@ func New() (*Api, error) {
 }
 
 func (a *Api) setRoutes() {
-	a.server.POST("/deploy", a.deploy)
-	a.server.GET("/healthcheck", a.healthcheck)
+	a.server.POST("/", a.deploy)
+	a.server.DELETE("/", a.delete)
+	a.server.GET("/", a.healthcheck)
 }
 
 func buildServer() *echo.Echo {

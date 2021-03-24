@@ -7,10 +7,7 @@ import (
 func init() {
 	viper.SetEnvPrefix("waf")
 	viper.AutomaticEnv()
-	viper.SetDefault("image", "arthurcgc/waf-modsecurity:v2")
+	viper.SetDefault("image", "arthurcgc/waf-modsecurity")
 	viper.SetDefault("port", "8080")
 	viper.SetDefault("outside_cluster", "false")
-	viper.AddConfigPath(".")
-	viper.SetConfigName("modsecurity-recommended")
-	viper.ReadInConfig()
 }
