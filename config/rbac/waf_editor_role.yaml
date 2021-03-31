@@ -1,0 +1,24 @@
+# permissions for end users to edit wafs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: waf-editor-role
+rules:
+- apiGroups:
+  - waf.arthurcgc.waf-operator
+  resources:
+  - wafs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - waf.arthurcgc.waf-operator
+  resources:
+  - wafs/status
+  verbs:
+  - get
