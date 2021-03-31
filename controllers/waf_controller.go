@@ -18,12 +18,19 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
+	nginxv1alpha1 "github.com/tsuru/nginx-operator/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	extensionsv1 "github.com/arthurcgc/waf-operator/api/v1"
 	wafv1 "github.com/arthurcgc/waf-operator/api/v1"
 )
 
@@ -38,16 +45,92 @@ type WafReconciler struct {
 // +kubebuilder:rbac:groups=waf.arthurcgc.waf-operator,resources=wafs/status,verbs=get;update;patch
 
 func (r *WafReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+	ctx := context.Background()
 	_ = r.Log.WithValues("waf", req.NamespacedName)
 
-	// your logic here
+	instance, err := r.getWafInstance(ctx, req.NamespacedName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	plan, err := r.getPlan(ctx, instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	rendered, err := r.renderTemplate(ctx, instance, plan)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	wafCM := newWafConfig(instance)
+	err = r.reconcileConfigMap(ctx, wafCM)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	mainCM := newMainCM(instance, rendered)
+	err = r.reconcileConfigMap(ctx, mainCM)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	nginx := newNginx(instance, plan, mainCM)
+	if err = r.reconcileNginx(ctx, instance, nginx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err = r.refreshStatus(ctx, instance, nginx); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *WafReconciler) refreshStatus(ctx context.Context, instance *extensionsv1.Waf, newNginx *nginxv1alpha1.Nginx) error {
+	existingNginx, err := r.getNginx(ctx, instance)
+	if err != nil && !k8sErrors.IsNotFound(err) {
+		return err
+	}
+	newHash, err := generateNginxHash(newNginx)
+	if err != nil {
+		return err
+	}
+
+	existingHash, err := generateNginxHash(existingNginx)
+	if err != nil {
+		return err
+	}
+
+	newStatus := extensionsv1.WafStatus{
+		ObservedGeneration:        instance.Generation,
+		WantedNginxRevisionHash:   newHash,
+		ObservedNginxRevisionHash: existingHash,
+		NginxUpdated:              newHash == existingHash,
+	}
+
+	if existingNginx != nil {
+		newStatus.CurrentReplicas = existingNginx.Status.CurrentReplicas
+		newStatus.PodSelector = existingNginx.Status.PodSelector
+	}
+
+	if reflect.DeepEqual(instance.Status, newStatus) {
+		return nil
+	}
+
+	instance.Status = newStatus
+	err = r.Client.Status().Update(ctx, instance)
+	if err != nil {
+		return fmt.Errorf("failed to update rpaas instance status: %v", err)
+	}
+
+	return nil
 }
 
 func (r *WafReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&wafv1.Waf{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&nginxv1alpha1.Nginx{}).
 		Complete(r)
 }

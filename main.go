@@ -28,6 +28,7 @@ import (
 
 	wafv1 "github.com/arthurcgc/waf-operator/api/v1"
 	"github.com/arthurcgc/waf-operator/controllers"
+	nginxv1alpha1 "github.com/tsuru/nginx-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -41,6 +42,7 @@ func init() {
 
 	_ = wafv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
+	_ = nginxv1alpha1.AddToScheme(scheme)
 }
 
 func main() {

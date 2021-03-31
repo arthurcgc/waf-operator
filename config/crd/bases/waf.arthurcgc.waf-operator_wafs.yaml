@@ -1,0 +1,148 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: wafs.waf.arthurcgc.waf-operator
+spec:
+  group: waf.arthurcgc.waf-operator
+  names:
+    kind: Waf
+    listKind: WafList
+    plural: wafs
+    singular: waf
+  scope: Namespaced
+  subresources:
+    scale:
+      labelSelectorPath: .status.podSelector
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.currentReplicas
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Waf is the Schema for the wafs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: WafSpec defines the desired state of Waf
+          properties:
+            bind:
+              description: Bind is the app bounded to the instance
+              properties:
+                hostname:
+                  type: string
+                name:
+                  type: string
+              type: object
+            extraFiles:
+              description: ExtraFiles points to a ConfigMap where the files are stored.
+              properties:
+                files:
+                  additionalProperties:
+                    type: string
+                  description: Files maps each key entry from the ConfigMap to its
+                    relative location on the nginx filesystem.
+                  type: object
+                name:
+                  description: Name points to a ConfigMap resource (in the same namespace)
+                    which holds the files.
+                  type: string
+              required:
+              - name
+              type: object
+            planName:
+              description: Plan is the name of the wafplan instance.
+              type: string
+            replicas:
+              description: Number of desired pods. This is a pointer to distinguish
+                between explicit zero and not specified. Defaults to 1.
+              format: int32
+              type: integer
+            service:
+              description: Service to expose the nginx instance
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  description: Annotations are extra annotations for the service.
+                  type: object
+                externalTrafficPolicy:
+                  description: ExternalTrafficPolicy defines whether external traffic
+                    will be routed to node-local or cluster-wide endpoints. Defaults
+                    to the default Service externalTrafficPolicy value.
+                  type: string
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels are extra labels for the service.
+                  type: object
+                loadBalancerIP:
+                  description: LoadBalancerIP is an optional load balancer IP for
+                    the service.
+                  type: string
+                type:
+                  description: Type is the type of the service. Defaults to the default
+                    service type value.
+                  type: string
+                usePodSelector:
+                  description: UsePodSelector defines whether Service should automatically
+                    map the endpoints using the pod's label selector. Defaults to
+                    true.
+                  type: boolean
+              type: object
+          type: object
+        status:
+          description: WafStatus defines the observed state of Waf
+          properties:
+            currentReplicas:
+              description: CurrentReplicas is the last observed number of pods.
+              format: int32
+              type: integer
+            nginxUpdated:
+              description: NginxUpdated is true if the wanted nginx revision hash
+                equals the observed nginx revision hash.
+              type: boolean
+            observedGeneration:
+              description: The most recent generation observed by the rpaas operator
+                controller.
+              format: int64
+              type: integer
+            observedNginxRevisionHash:
+              description: The revision hash observed by the controller in the nginx
+                object.
+              type: string
+            podSelector:
+              description: PodSelector is the NGINX's pod label selector.
+              type: string
+            wantedNginxRevisionHash:
+              description: Revision hash calculated for the current spec.
+              type: string
+          required:
+          - nginxUpdated
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

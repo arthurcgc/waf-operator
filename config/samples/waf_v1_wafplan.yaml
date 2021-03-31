@@ -1,0 +1,12 @@
+apiVersion: waf.arthurcgc.waf-operator/v1
+kind: WafPlan
+metadata:
+  name: default
+  namespace: frontend
+spec:
+  image: arthurcgc/waf-modsecurity
+  description: "default waf plan"
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "500m"

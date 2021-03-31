@@ -2,6 +2,12 @@ apiVersion: waf.arthurcgc.waf-operator/v1
 kind: Waf
 metadata:
   name: waf-sample
+  namespace: frontend
 spec:
-  # Add fields here
-  foo: bar
+  replicas: 2
+  planName: default
+  bind:
+    name: dvwa
+    hostname: http://dvwa-service.backend.svc.cluster.local
+  service:
+    type: NodePort

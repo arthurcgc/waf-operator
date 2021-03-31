@@ -36,10 +36,10 @@ type WafSpec struct {
 
 	// Plan is the name of the wafplan instance.
 	// +optional
-	Plan WafPlan `json:"planName"`
+	WafPlanName string `json:"planName"`
 
 	// Bind is the app bounded to the instance
-	Bind []Bind `json:"bind,omitempty"`
+	Bind Bind `json:"bind,omitempty"`
 
 	// Service to expose the nginx instance
 	// +optional
@@ -50,19 +50,9 @@ type WafSpec struct {
 	ExtraFiles *nginxv1alpha1.FilesRef `json:"extraFiles,omitempty"`
 }
 
-type WafPlan struct {
-	Name  string
-	Rules []Rule
-}
-
-type Rule struct {
-	Name string
-	Body string
-}
-
 type Bind struct {
-	Name     string
-	Hostname string
+	Name     string `json:"name,omitempty"`
+	Hostname string `json:"hostname,omitempty"`
 }
 
 // WafStatus defines the observed state of Waf
