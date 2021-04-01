@@ -172,11 +172,11 @@ func (r *WafReconciler) reconcileNginx(ctx context.Context, instance *extensions
 	// correctly.
 	// if !r.rolloutEnabled(instance) {
 	// 	nginx = found
-	// 	nginx.Spec.Replicas = instance.Spec.Replicas
 	// }
 
 	nginx = found
 	nginx.ObjectMeta.ResourceVersion = found.ObjectMeta.ResourceVersion
+	nginx.Spec.Replicas = instance.Spec.Replicas
 	err = r.Client.Update(ctx, nginx)
 	if err != nil {
 		logrus.Errorf("Failed to update nginx CR: %v", err)
