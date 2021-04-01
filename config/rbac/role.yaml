@@ -7,20 +7,57 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - waf.arthurcgc.waf-operator
+  - ""
   resources:
-  - wafs
+  - configmaps
+  - endpoints
+  - events
+  - persistentvolumeclaims
+  - pods
+  - secrets
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
   verbs:
   - create
-  - delete
   - get
-  - list
-  - patch
-  - update
-  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - nginx.tsuru.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
 - apiGroups:
   - waf.arthurcgc.waf-operator
   resources:
+  - wafplans
+  - wafs
+  verbs:
+  - '*'
+- apiGroups:
+  - waf.arthurcgc.waf-operator
+  resources:
+  - wafplans/status
   - wafs/status
   verbs:
   - get

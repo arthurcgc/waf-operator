@@ -41,8 +41,13 @@ type WafReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=waf.arthurcgc.waf-operator,resources=wafs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=waf.arthurcgc.waf-operator,resources=wafs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=waf.arthurcgc.waf-operator,resources=wafs;wafplans,verbs=*
+// +kubebuilder:rbac:groups=waf.arthurcgc.waf-operator,resources=wafs/status;wafplans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=services;configmaps;secrets;events;persistentvolumeclaims;endpoints;pods,verbs=*
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;create
+// +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=*
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
+// +kubebuilder:rbac:groups=nginx.tsuru.io,resources=*,verbs=*
 
 func (r *WafReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
