@@ -5,16 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	extensionsv1 "github.com/arthurcgc/waf-operator/api/v1"
+	"github.com/arthurcgc/waf-operator/pkg/rules"
 	"github.com/sirupsen/logrus"
-	"github.com/tsuru/nginx-operator/api/v1alpha1"
 	nginxv1alpha1 "github.com/tsuru/nginx-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -70,7 +68,7 @@ func (r *WafReconciler) renderTemplate(ctx context.Context, instance *extensions
 		}`, instance.Spec.Bind.Hostname), nil
 	}
 
-	return "", errors.New(fmt.Sprintf("plan not found on instance namespace: %s\n can't create nginx.conf", instance.Namespace))
+	return "", fmt.Errorf("plan not found on instance namespace: %s\n can't create nginx.conf", instance.Namespace)
 }
 
 func newMainCM(instance *extensionsv1.Waf, renderedTemplate string) *corev1.ConfigMap {
@@ -90,8 +88,61 @@ func newMainCM(instance *extensionsv1.Waf, renderedTemplate string) *corev1.Conf
 	}
 }
 
-func newWafConfig(instance *extensionsv1.Waf) *corev1.ConfigMap {
-	wafCM := &v1.ConfigMap{
+func mapUnion(a, b map[string]string) map[string]string {
+	for k, v := range b {
+		a[k] = v
+	}
+
+	return a
+}
+
+func newWafConfig(instance *extensionsv1.Waf) (*corev1.ConfigMap, error) {
+	includes := map[string]string{
+		"modsec-includes.conf": `
+		Include /usr/local/waf-conf/modsecurity-recommended.conf
+		Include /usr/local/waf-conf/crs-setup.conf
+		Include REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+		Include REQUEST-901-INITIALIZATION.conf
+		Include REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
+		Include REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
+		Include REQUEST-903.9003-NEXTCLOUD-EXCLUSION-RULES.conf
+		Include REQUEST-903.9004-DOKUWIKI-EXCLUSION-RULES.conf
+		Include REQUEST-903.9005-CPANEL-EXCLUSION-RULES.conf
+		Include REQUEST-903.9006-XENFORO-EXCLUSION-RULES.conf
+		Include REQUEST-905-COMMON-EXCEPTIONS.conf
+		Include REQUEST-910-IP-REPUTATION.conf
+		Include REQUEST-911-METHOD-ENFORCEMENT.conf
+		Include REQUEST-912-DOS-PROTECTION.conf
+		Include REQUEST-913-SCANNER-DETECTION.conf
+		Include REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+		Include REQUEST-921-PROTOCOL-ATTACK.conf
+		Include REQUEST-930-APPLICATION-ATTACK-LFI.conf
+		Include REQUEST-931-APPLICATION-ATTACK-RFI.conf
+		Include REQUEST-932-APPLICATION-ATTACK-RCE.conf
+		Include REQUEST-933-APPLICATION-ATTACK-PHP.conf
+		Include REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
+		Include REQUEST-941-APPLICATION-ATTACK-XSS.conf
+		Include REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+		Include REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+		Include REQUEST-944-APPLICATION-ATTACK-JAVA.conf
+		Include REQUEST-949-BLOCKING-EVALUATION.conf
+		Include RESPONSE-950-DATA-LEAKAGES.conf
+		Include RESPONSE-951-DATA-LEAKAGES-SQL.conf
+		Include RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+		Include RESPONSE-953-DATA-LEAKAGES-PHP.conf
+		Include RESPONSE-954-DATA-LEAKAGES-IIS.conf
+		Include RESPONSE-959-BLOCKING-EVALUATION.conf
+		Include RESPONSE-980-CORRELATION.conf
+		Include RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+		`,
+	}
+	rules, err := rules.RenderRules()
+	if err != nil {
+		return nil, err
+	}
+	data := mapUnion(rules, includes)
+
+	wafCM := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
@@ -101,23 +152,19 @@ func newWafConfig(instance *extensionsv1.Waf) *corev1.ConfigMap {
 			Namespace: instance.Namespace,
 		},
 
-		Data: map[string]string{
-			"modsec-includes.conf": `
-Include /usr/local/waf-conf/modsecurity-recommended.conf
-Include /usr/local/waf-conf/crs-setup.conf
-Include /usr/local/waf-conf/rules/*.conf
-			`,
-		},
+		Data: data,
 	}
 
+	extraFilesMap := make(map[string]string)
+	for k := range data {
+		extraFilesMap[k] = k
+	}
 	instance.Spec.ExtraFiles = &nginxv1alpha1.FilesRef{
-		Name: wafCM.Name,
-		Files: map[string]string{
-			"modsec-includes.conf": "modsec-includes.conf",
-		},
+		Name:  wafCM.Name,
+		Files: extraFilesMap,
 	}
 
-	return wafCM
+	return wafCM, nil
 }
 
 func (r *WafReconciler) reconcileConfigMap(ctx context.Context, configMap *corev1.ConfigMap) error {
@@ -212,8 +259,8 @@ func newNginx(instance *extensionsv1.Waf, plan *extensionsv1.WafPlan, mainCM *co
 			Namespace: instance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   v1alpha1.GroupVersion.Group,
-					Version: v1alpha1.GroupVersion.Version,
+					Group:   extensionsv1.GroupVersion.Group,
+					Version: extensionsv1.GroupVersion.Version,
 					Kind:    "RpaasInstance",
 				}),
 			},

@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	extensionsv1 "github.com/arthurcgc/waf-operator/api/v1"
 	wafv1 "github.com/arthurcgc/waf-operator/api/v1"
 )
 
@@ -68,7 +67,10 @@ func (r *WafReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	wafCM := newWafConfig(instance)
+	wafCM, err := newWafConfig(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	err = r.reconcileConfigMap(ctx, wafCM)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -92,7 +94,7 @@ func (r *WafReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (r *WafReconciler) refreshStatus(ctx context.Context, instance *extensionsv1.Waf, newNginx *nginxv1alpha1.Nginx) error {
+func (r *WafReconciler) refreshStatus(ctx context.Context, instance *wafv1.Waf, newNginx *nginxv1alpha1.Nginx) error {
 	existingNginx, err := r.getNginx(ctx, instance)
 	if err != nil && !k8sErrors.IsNotFound(err) {
 		return err
@@ -107,7 +109,7 @@ func (r *WafReconciler) refreshStatus(ctx context.Context, instance *extensionsv
 		return err
 	}
 
-	newStatus := extensionsv1.WafStatus{
+	newStatus := wafv1.WafStatus{
 		ObservedGeneration:        instance.Generation,
 		WantedNginxRevisionHash:   newHash,
 		ObservedNginxRevisionHash: existingHash,
