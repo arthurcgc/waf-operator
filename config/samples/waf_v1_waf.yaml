@@ -4,7 +4,7 @@ metadata:
   name: waf-sample
   namespace: frontend
 spec:
-  replicas: 2
+  replicas: 1
   planName: default
   bind:
     name: dvwa
