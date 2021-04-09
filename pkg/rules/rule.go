@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -14,6 +15,7 @@ func RenderRules() (WAFRule, error) {
 	if err != nil {
 		return WAFRule{}, err
 	}
+
 	rootPath := fmt.Sprintf("%s/rules", root)
 	err = filepath.Walk(rootPath,
 		func(path string, info os.FileInfo, err error) error {
@@ -24,7 +26,7 @@ func RenderRules() (WAFRule, error) {
 				return nil
 			}
 			pathName := fmt.Sprintf("%s/%s", rootPath, info.Name())
-			content, err := os.ReadFile(pathName)
+			content, err := ioutil.ReadFile(pathName)
 			if err != nil {
 				return err
 			}
