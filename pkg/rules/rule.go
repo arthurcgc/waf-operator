@@ -14,7 +14,7 @@ func RenderRules() (WAFRule, error) {
 	if err != nil {
 		return WAFRule{}, err
 	}
-	rootPath := fmt.Sprintf("%s/static_files", root)
+	rootPath := fmt.Sprintf("%s/rules", root)
 	err = filepath.Walk(rootPath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {

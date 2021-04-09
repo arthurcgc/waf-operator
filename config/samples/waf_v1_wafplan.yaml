@@ -4,7 +4,7 @@ metadata:
   name: default
   namespace: frontend
 spec:
-  image: arthurcgc/waf-modsecurity
+  image: arthurcgc/modsecurity
   description: "default waf plan"
   resources:
     limits:

@@ -148,7 +148,7 @@ func newWafConfig(instance *extensionsv1.Waf) (*corev1.ConfigMap, error) {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-conf-extra", instance.Name),
+			Name:      fmt.Sprintf("%s-config-extra", instance.Name),
 			Namespace: instance.Namespace,
 		},
 
