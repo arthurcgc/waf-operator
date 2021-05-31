@@ -134,9 +134,10 @@ func newWafConfig(instance *extensionsv1.Waf) (*corev1.ConfigMap, error) {
 		Include RESPONSE-959-BLOCKING-EVALUATION.conf
 		Include RESPONSE-980-CORRELATION.conf
 		Include RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+		Include CUSTOM-RULES.conf
 		`,
 	}
-	rules, err := rules.RenderRules()
+	rules, err := rules.RenderRules(instance)
 	if err != nil {
 		return nil, err
 	}

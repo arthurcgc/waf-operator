@@ -38,6 +38,8 @@ type WafSpec struct {
 	// +optional
 	WafPlanName string `json:"planName"`
 
+	Rules Rules `json:"rules,omitempty"`
+
 	// Bind is the app bounded to the instance
 	Bind Bind `json:"bind,omitempty"`
 
