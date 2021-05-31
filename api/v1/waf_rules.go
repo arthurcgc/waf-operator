@@ -18,12 +18,10 @@ package v1
 
 type Rules struct {
 	// Used to add/edit rules in RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
-	RulesAfter `json:"removeAfter,omitempty"`
+	*RulesAfter `json:"removeAfter,omitempty"`
 
-	// Possible user created rules
-	// key == file name to be created for the rule
-	// value == contents of the rule
-	CustomRules map[string]string `json:"customRules,omitempty"`
+	// User created rules
+	CustomRules []string `json:"customRules,omitempty"`
 
 	//	If enabled we set the following rule inside REQUEST-910-IP-REPUTATION.conf:
 	// 	This rule checks the client IP address against a list of recent IPs captured
