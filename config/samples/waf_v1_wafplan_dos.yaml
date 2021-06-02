@@ -4,7 +4,7 @@ metadata:
   name: default
   namespace: frontend
 spec:
-  image: arthurcgc/modsecurity
+  image: arthurcgc/modsecurity:dos
   description: "dos enabled waf plan"
   resources:
     limits:

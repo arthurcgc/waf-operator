@@ -76,7 +76,7 @@ func (r *WafReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	mainCM := newMainCM(instance, rendered)
+	mainCM := newMainCM(instance, rendered, wafCM)
 	err = r.reconcileConfigMap(ctx, mainCM)
 	if err != nil {
 		return reconcile.Result{}, err

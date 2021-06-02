@@ -6,6 +6,7 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	extensionsv1 "github.com/arthurcgc/waf-operator/api/v1"
@@ -71,7 +72,21 @@ func (r *WafReconciler) renderTemplate(ctx context.Context, instance *extensions
 	return "", fmt.Errorf("plan not found on instance namespace: %s\n can't create nginx.conf", instance.Namespace)
 }
 
-func newMainCM(instance *extensionsv1.Waf, renderedTemplate string) *corev1.ConfigMap {
+func mapToStringSorted(data map[string]string) string {
+	// Collect all keys, sort them and iterate your map
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	s := ""
+	for _, k := range keys {
+		s += (k + data[k])
+	}
+	return s
+}
+
+func newMainCM(instance *extensionsv1.Waf, renderedTemplate string, wafCM *corev1.ConfigMap) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -143,13 +158,15 @@ func newWafConfig(instance *extensionsv1.Waf) (*corev1.ConfigMap, error) {
 	}
 	data := mapUnion(rules, includes)
 
+	wafString := mapToStringSorted(rules)
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(wafString)))
 	wafCM := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-config-extra", instance.Name),
+			Name:      fmt.Sprintf("%s-config-extra-%s", instance.Name, hash[:10]),
 			Namespace: instance.Namespace,
 		},
 
@@ -222,9 +239,7 @@ func (r *WafReconciler) reconcileNginx(ctx context.Context, instance *extensions
 	// 	nginx = found
 	// }
 
-	nginx = found
 	nginx.ObjectMeta.ResourceVersion = found.ObjectMeta.ResourceVersion
-	nginx.Spec.Replicas = instance.Spec.Replicas
 	err = r.Client.Update(ctx, nginx)
 	if err != nil {
 		logrus.Errorf("Failed to update nginx CR: %v", err)
@@ -262,7 +277,7 @@ func newNginx(instance *extensionsv1.Waf, plan *extensionsv1.WafPlan, mainCM *co
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
 					Group:   extensionsv1.GroupVersion.Group,
 					Version: extensionsv1.GroupVersion.Version,
-					Kind:    "RpaasInstance",
+					Kind:    "WafInstance",
 				}),
 			},
 			Labels: labelsForWafInstance(instance),

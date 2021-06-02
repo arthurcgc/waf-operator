@@ -1,0 +1,16 @@
+apiVersion: waf.arthurcgc.waf-operator/v1
+kind: Waf
+metadata:
+  name: waf-sample
+  namespace: frontend
+spec:
+  replicas: 1
+  planName: default
+  rules:
+    customRules:
+      - "SecRule ARGS:testparam \"@contains test\" \"id:1234,deny,log,status:403\""
+  bind:
+    name: dvwa
+    hostname: http://dvwa-service.backend.svc.cluster.local
+  service:
+    type: NodePort
