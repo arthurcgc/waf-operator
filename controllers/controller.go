@@ -238,7 +238,6 @@ func (r *WafReconciler) reconcileNginx(ctx context.Context, instance *extensions
 	// if !r.rolloutEnabled(instance) {
 	// 	nginx = found
 	// }
-
 	nginx.ObjectMeta.ResourceVersion = found.ObjectMeta.ResourceVersion
 	err = r.Client.Update(ctx, nginx)
 	if err != nil {

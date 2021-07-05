@@ -1,0 +1,17 @@
+apiVersion: waf.arthurcgc.waf-operator/v1
+kind: Waf
+metadata:
+  name: waf-sample
+  namespace: frontend
+spec:
+  replicas: 1
+  planName: default
+  bind:
+    name: dvwa
+    hostname: http://dvwa-service.backend.svc.cluster.local
+  service:
+    type: NodePort
+  rules:
+    removeAfter: 
+      removeByTag: 
+        - "attack-sqli"

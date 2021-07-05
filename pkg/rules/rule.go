@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	extensionsv1 "github.com/arthurcgc/waf-operator/api/v1"
+	v1 "github.com/arthurcgc/waf-operator/api/v1"
 )
 
 var CustomRulesKey = "CUSTOM-RULES.conf"
@@ -48,13 +48,29 @@ func renderRules() (WAFRule, error) {
 	return rules, nil
 }
 
-func mergeRules(currentRules WAFRule, instanceRules extensionsv1.Rules) (WAFRule, error) {
+func mergeRulesAfter(currentRules map[string]string, rulesAfter *v1.RulesAfter) WAFRule {
+	for _, ruleId := range rulesAfter.RemoveById {
+		currentRules["RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"] = strings.Join(
+			[]string{currentRules["RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"],
+				fmt.Sprintf("SecRuleRemoveById %s\n", ruleId)}, "")
+	}
+
+	for _, ruleTag := range rulesAfter.RemoveByTag {
+		currentRules["RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"] = strings.Join(
+			[]string{currentRules["RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"],
+				fmt.Sprintf("SecRuleRemoveByTag \"%s\"\n", ruleTag)}, "")
+	}
+
+	return currentRules
+}
+
+func mergeRules(currentRules WAFRule, instanceRules v1.Rules) (WAFRule, error) {
 	if len(instanceRules.CustomRules) > 0 {
 		currentRules[CustomRulesKey] = strings.Join(instanceRules.CustomRules, "\n")
 	}
-	// if instanceRules.RulesAfter != nil {
-	// 	currentRules = mergeRulesAfter(instanceRules.RulesAfter)
-	// }
+	if instanceRules.RulesAfter != nil {
+		currentRules = mergeRulesAfter(currentRules, instanceRules.RulesAfter)
+	}
 	// if instanceRules.EnableDefaultHoneyPot {
 	//	If enabled we set the following rule inside REQUEST-910-IP-REPUTATION.conf:
 	// 	This rule checks the client IP address against a list of recent IPs captured
@@ -82,7 +98,7 @@ func mergeRules(currentRules WAFRule, instanceRules extensionsv1.Rules) (WAFRule
 
 }
 
-func RenderRules(instance *extensionsv1.Waf) (WAFRule, error) {
+func RenderRules(instance *v1.Waf) (WAFRule, error) {
 	rules, err := renderRules()
 	if err != nil {
 		return nil, err
